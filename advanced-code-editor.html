@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Code Editor</title>
+    <style>
+        :root {
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #f0f6fc;
+            --text-secondary: #8b949e;
+            --accent: #238636;
+            --accent-hover: #2ea043;
+            --border: #30363d;
+            --danger: #da3633;
+            --warning: #fb8500;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            height: 100vh;
+        }
+
+        .sidebar {
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo-section {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .custom-logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 15px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .logo-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .logo-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .logo-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .file-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            padding: 0 20px 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .file-controls {
+            display: flex;
+            gap: 10px;
+            padding: 0 20px 15px;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        .file-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 10px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            margin-bottom: 2px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+            group: hover;
+        }
+
+        .file-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .file-item.active {
+            background: var(--accent);
+        }
+
+        .file-item.favorite {
+            border-left: 3px solid var(--warning);
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .file-icon {
+            width: 16px;
+            height: 16px;
+            opacity: 0.8;
+        }
+
+        .file-name {
+            font-size: 13px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .file-item:hover .file-actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            width: 20px;
+            height: 20px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .action-btn.favorite.active {
+            color: var(--warning);
+        }
+
+        .action-btn.delete:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+        }
+
+        .editor-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+
+        .editor-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .language-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .lang-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .lang-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .lang-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .tooltip {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            border: 1px solid var(--border);
+        }
+
+        .lang-btn:hover .tooltip {
+            opacity: 1;
+        }
+
+        .editor-content {
+            flex: 1;
+            display: grid;
+            grid-template-rows: 1fr 200px;
+        }
+
+        .code-editor {
+            position: relative;
+            background: var(--bg-primary);
+        }
+
+        .code-textarea {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-family: 'Consolas', 'Monaco', 'Lucida Console', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            padding: 20px;
+            resize: none;
+            outline: none;
+            white-space: pre;
+            overflow-wrap: normal;
+            overflow-x: auto;
+            tab-size: 4;
+        }
+
+        .code-textarea::selection {
+            background: rgba(35, 134, 54, 0.3);
+        }
+
+        .output-section {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .output-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .run-btn {
+            padding: 8px 16px;
+            background: var(--accent);
+            border: none;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .run-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .output-content {
+            flex: 1;
+            padding: 15px 20px;
+            font-family: monospace;
+            font-size: 13px;
+            color: var(--text-secondary);
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .modal-header {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        /* 스크롤바 스타일링 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo-section">
+                <div class="custom-logo">
+                    <svg class="logo-svg" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                        <!-- 로봇 헤드 -->
+                        <rect x="15" y="20" width="50" height="40" rx="8" fill="none" stroke="#f0f6fc" stroke-width="2"/>
+                        
+                        <!-- 눈 -->
+                        <circle cx="28" cy="35" r="4" fill="#238636"/>
+                        <circle cx="52" cy="35" r="4" fill="#238636"/>
+                        
+                        <!-- 안테나 -->
+                        <line x1="25" y1="20" x2="25" y2="10" stroke="#f0f6fc" stroke-width="2"/>
+                        <line x1="55" y1="20" x2="55" y2="10" stroke="#f0f6fc" stroke-width="2"/>
+                        <circle cx="25" cy="10" r="2" fill="#238636"/>
+                        <circle cx="55" cy="10" r="2" fill="#238636"/>
+                        
+                        <!-- 몸체 -->
+                        <rect x="20" y="55" width="40" height="20" rx="4" fill="none" stroke="#f0f6fc" stroke-width="2"/>
+                        
+                        <!-- 팔 -->
+                        <rect x="8" y="58" width="15" height="6" rx="3" fill="none" stroke="#f0f6fc" stroke-width="1.5"/>
+                        <rect x="57" y="58" width="15" height="6" rx="3" fill="none" stroke="#f0f6fc" stroke-width="1.5"/>
+                        
+                        <!-- 코드 심볼 -->
+                        <text x="40" y="50" text-anchor="middle" fill="#238636" font-family="monospace" font-size="8">&lt;/&gt;</text>
+                        
+                        <!-- FRC 기어 -->
+                        <g transform="translate(35, 65)">
+                            <circle r="8" fill="none" stroke="#238636" stroke-width="1.5"/>
+                            <circle r="3" fill="#238636"/>
+                        </g>
+                    </svg>
+                </div>
+                <div class="logo-title">CodeBot FRC</div>
+                <div class="logo-subtitle">Advanced Code Editor</div>
+            </div>
+
+            <div class="file-section">
+                <div class="section-header">
+                    <span>파일 관리</span>
+                </div>
+                
+                <div class="file-controls">
+                    <button class="btn" onclick="showNewFileModal()">
+                        <span>📄</span> 새 파일
+                    </button>
+                </div>
+
+                <div class="file-list" id="fileList">
+                    <!-- 파일 목록이 동적으로 추가됩니다 -->
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="editor-header">
+                <div class="editor-title" id="editorTitle">새 파일을 생성하세요</div>
+                
+                <div class="language-selector">
+                    <button class="lang-btn" data-lang="python" onclick="setLanguage('python')">
+                        <span>🐍</span>
+                        <div class="tooltip">Python</div>
+                    </button>
+                    <button class="lang-btn" data-lang="javascript" onclick="setLanguage('javascript')">
+                        <span>⚡</span>
+                        <div class="tooltip">JavaScript</div>
+                    </button>
+                    <button class="lang-btn" data-lang="java" onclick="setLanguage('java')">
+                        <span>☕</span>
+                        <div class="tooltip">Java</div>
+                    </button>
+                    <button class="lang-btn" data-lang="c" onclick="setLanguage('c')">
+                        <span>⚙️</span>
+                        <div class="tooltip">C</div>
+                    </button>
+                    <button class="lang-btn" data-lang="cpp" onclick="setLanguage('cpp')">
+                        <span>🔧</span>
+                        <div class="tooltip">C++</div>
+                    </button>
+                    <button class="lang-btn" data-lang="html" onclick="setLanguage('html')">
+                        <span>🌐</span>
+                        <div class="tooltip">HTML</div>
+                    </button>
+                </div>
+            </div>
+
+            <div class="editor-content">
+                <div class="code-editor">
+                    <textarea 
+                        class="code-textarea" 
+                        id="codeTextarea" 
+                        placeholder="코드를 입력하세요..."
+                        spellcheck="false"
+                    ></textarea>
+                </div>
+
+                <div class="output-section">
+                    <div class="output-header">
+                        <div class="output-title">실행 결과</div>
+                        <button class="run-btn" onclick="runCode()">▶ 실행</button>
+                    </div>
+                    <div class="output-content" id="outputContent">
+                        코드를 실행하면 결과가 여기에 표시됩니다.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 새 파일 모달 -->
+    <div class="modal" id="newFileModal">
+        <div class="modal-content">
+            <div class="modal-header">새 파일 생성</div>
+            <div class="modal-body">
+                <input 
+                    type="text" 
+                    class="modal-input" 
+                    id="newFileName" 
+                    placeholder="파일 이름을 입력하세요"
+                >
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="hideNewFileModal()">취소</button>
+                <button class="btn" onclick="createNewFile()">생성</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let files = {};
+        let currentFile = null;
+        let currentLanguage = 'python';
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEditor();
+            loadSampleFiles();
+        });
+
+        // 에디터 초기화
+        function initializeEditor() {
+            const textarea = document.getElementById('codeTextarea');
+            
+            // Tab 키 처리
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    
+                    this.value = this.value.substring(0, start) + '\t' + this.value.substring(end);
+                    this.selectionStart = this.selectionEnd = start + 1;
+                }
+
+                // 자동 브라켓 완성
+                const brackets = {
+                    '{': '}',
+                    '[': ']',
+                    '(': ')',
+                    '"': '"',
+                    "'": "'"
+                };
+
+                if (brackets[e.key] && !e.ctrlKey && !e.metaKey) {
+                    e.preventDefault();
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    const selectedText = this.value.substring(start, end);
+                    
+                    if (e.key === '{') {
+                        // { 입력 시 자동 줄바꿈과 들여쓰기
+                        const newValue = this.value.substring(0, start) + 
+                                       '{\n\t' + selectedText + '\n}' + 
+                                       this.value.substring(end);
+                        this.value = newValue;
+                        this.selectionStart = this.selectionEnd = start + 3;
+                    } else {
+                        const newValue = this.value.substring(0, start) + 
+                                       e.key + selectedText + brackets[e.key] + 
+                                       this.value.substring(end);
+                        this.value = newValue;
+                        this.selectionStart = this.selectionEnd = start + 1;
+                    }
+                }
+            });
+
+            // 코드 변경 시 자동 저장
+            textarea.addEventListener('input', function() {
+                if (currentFile) {
+                    files[currentFile].content = this.value;
+                    updateFileDisplay();
+                }
+            });
+        }
+
+        // 샘플 파일 로드
+        function loadSampleFiles() {
+            files = {
+                'hello.py': {
+                    name: 'hello.py',
+                    content: '# Python Hello World\nprint("Hello, World!")\n\n# FRC 로봇 예제\nclass Robot:\n    def __init__(self):\n        self.name = "FRC Robot"\n    \n    def autonomous(self):\n        print("자율 주행 모드 시작")\n    \n    def teleop(self):\n        print("원격 조작 모드 시작")\n\nrobot = Robot()\nrobot.autonomous()',
+                    language: 'python',
+                    favorite: false
+                },
+                'robot.cpp': {
+                    name: 'robot.cpp',
+                    content: '// C++ FRC Robot Example\n#include <iostream>\n#include <string>\n\nclass Robot {\npublic:\n    Robot(const std::string& name) : robotName(name) {}\n    \n    void autonomous() {\n        std::cout << "Autonomous mode started for " << robotName << std::endl;\n    }\n    \n    void teleOperated() {\n        std::cout << "Teleoperated mode started" << std::endl;\n    }\n    \nprivate:\n    std::string robotName;\n};\n\nint main() {\n    Robot myRobot("FRC Team Robot");\n    myRobot.autonomous();\n    myRobot.teleOperated();\n    return 0;\n}',
+                    language: 'cpp',
+                    favorite: true
+                }
+            };
+            updateFileDisplay();
+        }
+
+        // 파일 표시 업데이트
+        function updateFileDisplay() {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+
+            if (Object.keys(files).length === 0) {
+                fileList.innerHTML = `
+                    <div class="empty-state">
+                        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14,2 14,8 20,8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <line x1="10" y1="9" x2="8" y2="9"/>
+                        </svg>
+                        <p>파일이 없습니다</p>
+                        <p style="font-size: 12px; margin-top: 5px;">새 파일을 생성해보세요</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // 즐겨찾기 파일을 먼저 표시
+            const sortedFiles = Object.values(files).sort((a, b) => {
+                if (a.favorite && !b.favorite) return -1;
+                if (!a.favorite && b.favorite) return 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            sortedFiles.forEach(file => {
+                const fileElement = document.createElement('div');
+                fileElement.className = `file-item ${currentFile === file.name ? 'active' : ''} ${file.favorite ? 'favorite' : ''}`;
+                
+                const icon = getFileIcon(file.language);
+                
+                fileElement.innerHTML = `
+                    <div class="file-info">
+                        <span class="file-icon">${icon}</span>
+                        <span class="file-name">${file.name}</span>
+                    </div>
+                    <div class="file-actions">
+                        <button class="action-btn favorite ${file.favorite ? 'active' : ''}" 
+                                onclick="toggleFavorite('${file.name}')" 
+                                title="즐겨찾기">
+                            ${file.favorite ? '⭐' : '☆'}
+                        </button>
+                        <button class="action-btn delete" 
+                                onclick="deleteFile('${file.name}')" 
+                                title="삭제">
+                            🗑️
+                        </button>
+                    </div>
+                `;
+
+                fileElement.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('action-btn')) {
+                        openFile(file.name);
+                    }
+                });
+
+                fileList.appendChild(fileElement);
+            });
+        }
+
+        // 파일 아이콘 가져오기
+        function getFileIcon(language) {
+            const icons = {
+                python: '🐍',
+                javascript: '⚡',
+                java: '☕',
+                c: '⚙️',
+                cpp: '🔧',
+                html: '🌐',
+                css: '🎨',
+                default: '📄'
+            };
+            return icons[language] || icons.default;
+        }
+
+        // 파일 열기
+        function openFile(fileName) {
+            if (files[fileName]) {
+                currentFile = fileName;
+                const file = files[fileName];
+                
+                document.getElementById('codeTextarea').value = file.content;
+                document.getElementById('editorTitle').textContent = fileName;
+                
+                setLanguage(file.language);
+                updateFileDisplay();
+            }
+        }
+
+        // 언어 설정
+        function setLanguage(language) {
+            currentLanguage = language;
+            
+            // 모든 언어 버튼에서 active 클래스 제거
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 선택된 언어 버튼에 active 클래스 추가
+            document.querySelector(`[data-lang="${language}"]`).classList.add('active');
+            
+            // 현재 파일의 언어 업데이트
+            if (currentFile && files[currentFile]) {
+                files[currentFile].language = language;
+            }
+        }
+
+        // 새 파일 모달 표시
+        function showNewFileModal() {
+            document.getElementById('newFileModal').classList.add('show');
+            document.getElementById('newFileName').focus();
+        }
+
+        // 새 파일 모달 숨기기
+        function hideNewFileModal() {
+            document.getElementById('newFileModal').classList.remove('show');
+            document.getElementById('newFileName').value = '';
+        }
+
+        // 새 파일 생성
+        function createNewFile() {
+            const fileName = document.getElementById('newFileName').value.trim();
+            
+            if (!fileName) {
+                alert('파일 이름을 입력해주세요.');
+                return;
+            }
+
+            if (files[fileName]) {
+                alert('이미 존재하는 파일명입니다.');
+                return;
+            }
+
+            const extension = fileName.split('.').pop().toLowerCase();
+            let language = currentLanguage;
+
+            // 확장자에 따른 언어 자동 감지
+            const languageMap = {
+                'py': 'python',
+                'js': 'javascript',
+                'java': 'java',
+                'c': 'c',
+                'cpp': 'cpp',
+                'cc': 'cpp',
+                'cxx': 'cpp',
+                'html': 'html',
+                'htm': 'html'
+            };
+
+            if (languageMap[extension]) {
+                language = languageMap[extension];
+            }
+
+            files[fileName] = {
+                name: fileName,
+                content: getTemplateCode(language),
+                language: language,
+                favorite: false
+            };
+
+            hideNewFileModal();
+            openFile(fileName);
+            updateFileDisplay();
+        }
+
+        // 템플릿 코드 가져오기
+        function getTemplateCode(language) {
+            const templates = {
+                python: '# Python 파일\nprint("Hello, Python!")\n',
+                javascript: '// JavaScript 파일\nconsole.log("Hello, JavaScript!");\n',
+                java: '// Java 파일\npublic class Main {\n\tpublic static void main(String[] args) {\n\t\tSystem.out.println("Hello, Java!");\n\t}\n}\n',
+                c: '// C 파일\n#include <stdio.h>\n\nint main() {\n\tprintf("Hello, C!\\n");\n\treturn 0;\n}\n',
+                cpp: '// C++ 파일\n#include <iostream>\n\nint main() {\n\tstd::cout << "Hello, C++!" << std::endl;\n\treturn 0;\n}\n',
+                html: '<!-- HTML 파일 -->\n<!DOCTYPE html>\n<html lang="ko">\n<head>\n\t<meta charset="UTF-8">\n\t<title>Hello HTML</title>\n</head>\n<body>\n\t<h1>Hello, HTML!</h1>\n</body>\n</html>\n'
+            };
+            return templates[language] || '// 새 파일\n';
+        }
+
+        // 즐겨찾기 토글
+        function toggleFavorite(fileName) {
+            if (files[fileName]) {
+                files[fileName].favorite = !files[fileName].favorite;
+                updateFileDisplay();
+            }
+        }
+
+        // 파일 삭제
+        function deleteFile(fileName) {
+            if (!files[fileName]) return;
+
+            if (confirm(`'${fileName}' 파일을 삭제하시겠습니까?`)) {
+                delete files[fileName];
+                
+                if (currentFile === fileName) {
+                    currentFile = null;
+                    document.getElementById('codeTextarea').value = '';
+                    document.getElementById('editorTitle').textContent = '새 파일을 생성하세요';
+                    document.getElementById('outputContent').textContent = '코드를 실행하면 결과가 여기에 표시됩니다.';
+                }
+                
+                updateFileDisplay();
+            }
+        }
+
+        // 코드 실행 (시뮬레이션)
+        function runCode() {
+            const code = document.getElementById('codeTextarea').value;
+            const outputElement = document.getElementById('outputContent');
+            
+            if (!code.trim()) {
+                outputElement.textContent = '실행할 코드가 없습니다.';
+                return;
+            }
+
+            // 간단한 코드 실행 시뮬레이션
+            outputElement.textContent = '코드를 실행하는 중...\n';
+            
+            setTimeout(() => {
+                let output = '';
+                
+                try {
+                    switch (currentLanguage) {
+                        case 'python':
+                            output = simulatePython(code);
+                            break;
+                        case 'javascript':
+                            output = simulateJavaScript(code);
+                            break;
+                        case 'java':
+                            output = simulateJava(code);
+                            break;
+                        case 'c':
+                        case 'cpp':
+                            output = simulateC(code);
+                            break;
+                        case 'html':
+                            output = simulateHTML(code);
+                            break;
+                        default:
+                            output = '이 언어는 아직 실행을 지원하지 않습니다.';
+                    }
+                } catch (error) {
+                    output = `오류 발생: ${error.message}`;
+                }
+                
+                outputElement.textContent = output;
+            }, 1000);
+        }
+
+        // Python 시뮬레이션
+        function simulatePython(code) {
+            let output = '';
+            const lines = code.split('\n');
+            
+            for (let line of lines) {
+                line = line.trim();
+                if (line.startsWith('print(') && line.endsWith(')')) {
+                    const content = line.slice(6, -1).replace(/['"]/g, '');
+                    output += content + '\n';
+                }
+            }
+            
+            if (code.includes('class Robot')) {
+                output += '\n[FRC Robot 시뮬레이션]\n';
+                output += '로봇 클래스가 정의되었습니다.\n';
+                if (code.includes('autonomous')) {
+                    output += '자율 주행 모드 준비 완료\n';
+                }
+                if (code.includes('teleop')) {
+                    output += '원격 조작 모드 준비 완료\n';
+                }
+            }
+            
+            return output || '실행 완료 (출력 없음)';
+        }
+
+        // JavaScript 시뮬레이션
+        function simulateJavaScript(code) {
+            let output = '';
+            const lines = code.split('\n');
+            
+            for (let line of lines) {
+                line = line.trim();
+                if (line.includes('console.log(') && line.includes(')')) {
+                    const match = line.match(/console\.log\((.+)\)/);
+                    if (match) {
+                        const content = match[1].replace(/['"]/g, '');
+                        output += content + '\n';
+                    }
+                }
+            }
+            
+            return output || '실행 완료 (출력 없음)';
+        }
+
+        // Java 시뮬레이션
+        function simulateJava(code) {
+            let output = '';
+            const lines = code.split('\n');
+            
+            for (let line of lines) {
+                line = line.trim();
+                if (line.includes('System.out.println(') && line.includes(')')) {
+                    const match = line.match(/System\.out\.println\((.+)\)/);
+                    if (match) {
+                        const content = match[1].replace(/['"]/g, '');
+                        output += content + '\n';
+                    }
+                }
+            }
+            
+            return output || 'Java 프로그램 실행 완료';
+        }
+
+        // C/C++ 시뮬레이션
+        function simulateC(code) {
+            let output = '';
+            const lines = code.split('\n');
+            
+            for (let line of lines) {
+                line = line.trim();
+                if (line.includes('printf(') && line.includes(')')) {
+                    const match = line.match(/printf\("(.+)"/);
+                    if (match) {
+                        const content = match[1].replace(/\\n/g, '\n');
+                        output += content;
+                    }
+                } else if (line.includes('std::cout') && line.includes('<<')) {
+                    const match = line.match(/"([^"]+)"/);
+                    if (match) {
+                        output += match[1] + '\n';
+                    }
+                }
+            }
+            
+            if (code.includes('Robot')) {
+                output += '\n[FRC C++ Robot 시뮬레이션]\n';
+                output += 'C++ 로봇 프로그램이 컴파일되었습니다.\n';
+            }
+            
+            return output || 'C/C++ 프로그램 실행 완료';
+        }
+
+        // HTML 시뮬레이션
+        function simulateHTML(code) {
+            const titleMatch = code.match(/<title>([^<]+)<\/title>/i);
+            const h1Match = code.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+            const bodyContent = code.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+            
+            let output = 'HTML 파일 미리보기:\n\n';
+            
+            if (titleMatch) {
+                output += `제목: ${titleMatch[1]}\n`;
+            }
+            
+            if (h1Match) {
+                output += `헤더: ${h1Match[1]}\n`;
+            }
+            
+            if (bodyContent) {
+                const textContent = bodyContent[1].replace(/<[^>]+>/g, '').trim();
+                if (textContent) {
+                    output += `내용: ${textContent}\n`;
+                }
+            }
+            
+            return output;
+        }
+
+        // 키보드 단축키
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+S: 파일 저장 (시뮬레이션)
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                if (currentFile) {
+                    console.log(`파일 저장됨: ${currentFile}`);
+                    // 실제로는 localStorage나 서버에 저장
+                }
+            }
+            
+            // Ctrl+N: 새 파일
+            if (e.ctrlKey && e.key === 'n') {
+                e.preventDefault();
+                showNewFileModal();
+            }
+            
+            // F5: 코드 실행
+            if (e.key === 'F5') {
+                e.preventDefault();
+                runCode();
+            }
+        });
+
+        // Enter 키로 모달에서 파일 생성
+        document.getElementById('newFileName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                createNewFile();
+            }
+        });
+
+        // ESC 키로 모달 닫기
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideNewFileModal();
+            }
+        });
+
+        // 모달 외부 클릭 시 닫기
+        document.getElementById('newFileModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideNewFileModal();
+            }
+        });
+    </script>
+</body>
+</html>
